@@ -1,4 +1,4 @@
-from functs import headless
+from functs import my_webdriver
 import time
 import random
 from selenium.webdriver.common.by import By
@@ -7,18 +7,14 @@ from selenium.webdriver.common.action_chains import ActionChains
 import re
 import bs4
 from functs.weibo_feed import WeiboFeed
-from functs import headless
+from functs import my_webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from requestium import  Keys
 import traceback
 import requests
-
-
 def smart_wait(browser, by, pos):
     #  = WebDriverWait(browser, 10).until(EC.presence_of_element_located(locator))
     ele = WebDriverWait(browser, 20).until(lambda driver: driver.find_element(by, pos))
-
-
 def login(username, password, b):
     b.get('https://weibo.com/p/1005055218229072/')
     b.find_element(By.XPATH, '//*[@id="pl_common_top"]/div/div/div[3]/div[2]/ul/li[3]/a').click()
@@ -31,8 +27,6 @@ def login(username, password, b):
     print('login successfully')
     wait(5)
     b.execute_script("document.body.style.zoom='0.7'")
-
-
 def find_content(b):
     for page in range(82, 100):
         # for i in range(10):

@@ -15,3 +15,10 @@ def getBrowser(flag):
     b = webdriver.Chrome(executable_path=posC, options=chrome_options)
     return b
 
+
+def is_element_exist(b, by, pos):
+    s = b.find_elements(by, pos)
+    if len(s) == 0:
+        return False
+    elif len(s) == 1:
+        return True
