@@ -12,48 +12,114 @@ from selenium.webdriver.support.ui import WebDriverWait
 from requestium import  Keys
 import traceback
 import requests
-def find_by_month():
-    file=open('ff.html','rb')
-    soup=bs4.BeautifulSoup(file,'lxml')
-    print(soup.getText())
-    feed_contents=soup.find_all('div',attrs={'class':'WB_detail'})
-    for feed_content in feed_contents:
-        feed=weibo_feed()
-        feed.username=feed_content.find('a',attrs={'suda-uatrack':'key=noload_singlepage&value=user_name'}).getText()
-        feed.datetime=feed_content.find('a', attrs = {'node-type': 'feed_list_item_date'})['title']
-        feed.tool=feed_content.find('a', attrs = {'action-type': 'app_source'}).getText()
-        if feed_content.find('div', attrs = {'class': 'WB_feed_expand'}) is None:
-        #     Original
-            pass
-        else:
-            feed.content=feed_content.find('div', attrs = {'node-type': 'feed_list_content'}).getText()+" "+\
-                         feed_content.find('div', attrs = {'node-type': 'feed_list_forwardContent'}).getText()
-            print(feed.content)
 
-# soup=bs4.BeautifulSoup('<div class="WB_from S_txt2"><a name="4416888077415154" target="_blank" href="/2494020804/I75kPv71g?from=page_1005055218229072_profile&amp;wvr=6&amp;mod=weibotime" title="2019-09-15 20:47" date="1568551641000" class="S_txt2" node-type="feed_list_item_date" suda-data="key=tblog_home_new&amp;value=feed_time:4416888077415154:fromprofile"> 9月15日 20:47</a> 来自 <a class="S_txt2" target="_blank" href="http://vip.weibo.com/prividesc?priv=1006&amp;from=feed">Android</a>            	            </div>','lxml')
-# print(soup.find('div', attrs = {'class': 'WB_from S_txt2'}))
-strr= '//weibo.com/p/1005055218229072/home?profile_ftype=1&is_all=1#_0'
-# print(strr.split('/'))
-def get_short_url(long_url):
-    url='http://sa.sogou.com/gettiny?url='+long_url
-    res=requests.get(url=url)
-    return res.text
-def get_big_pic_url(b,url):
-    b.find_element(By.XPATH, '//img[@src='+url+']' ).click()
-    wait(2)
-    return b.find_element(By.XPATH, '//img[@class=asd]').get_property('src')
-def tes(a,strr):
-    print(strr)
-strr='3小时前'
-ans=re.findall('^[1-9]\d*',  strr)
-def get_short_url(long_url):
-    if 'https:' not in long_url:
-        long_url='https:'+long_url
-    url='http://suo.im/api.htm?url=urlencode(\'%s\')&key=5d822a01b1a9c722a6aa2c65@d5ca070c285c0854cf63c3b39d5237f1'% long_url
-    # url='http://sa.sogou.com/gettiny?url='+long_url
-    res=requests.get(url=url)
-    return res.text
-# print(get_short_url('//www.baidu.com'))
+
+def smart_wait(browser, by, pos):
+    #  = WebDriverWait(browser, 10).until(EC.presence_of_element_located(locator))
+    ele = WebDriverWait(browser, 20).until(lambda driver: driver.find_element(by, pos))
+
+
+def login(username, password, b):
+    b.get('https://weibo.com/p/1005055218229072/')
+    b.find_element(By.XPATH, '//*[@id="pl_common_top"]/div/div/div[3]/div[2]/ul/li[3]/a').click()
+    wait(1)
+    b.find_element(By.NAME, "username").send_keys(username)
+    b.find_element(By.NAME, "password").send_keys(password)
+    wait(1)
+    b.find_element(By.CSS_SELECTOR, 'a[suda-data="key=tblog_weibologin3&value=click_sign"]').click()
+    smart_wait(b, By.CSS_SELECTOR, 'a[action-type="select_year"]')
+    print('login successfully')
+    wait(5)
+    b.execute_script("document.body.style.zoom='0.7'")
+
+
+def find_content(b):
+    for page in range(82, 100):
+        # for i in range(10):
+        #     b.execute_script("window.scrollTo(0, document.body.scrollHeight)");
+        #     if is_element_exist(b,By.PARTIAL_LINK_TEXT, '下一页') is True:
+        #         print('下拉完成')
+        #         print('正在第'+str(page-1) +'页')
+        #         break
+        #     wait(2)
+        # page_source=correct_decoding(b.page_source)
+        page_source = b.page_source.replace('\n', '').encode('gbk', 'ignore').decode('gbk')
+        soup = bs4.BeautifulSoup(page_source, 'lxml')
+        feed_contents = soup.find_all('div', attrs={'class': 'WB_cardwrap WB_feed_type S_bg2 WB_feed_like'})
+        for feed_content in feed_contents:
+            if feed_content.find('span', attrs={'class': 'subtitle'}) is not None:  # ignore liked weibo
+                continue
+            feed = WeiboFeed()
+            feed.url = b.current_url
+            feed.username = feed_content.find('a',
+                                              attrs={'suda-uatrack': 'key=noload_singlepage&value=user_name'}).getText()
+            # get simple inf
+            try:
+                datetime_tool = feed_content.find('div', attrs={'class': 'WB_from S_txt2'})
+                feed.datetime = datetime_tool.find_all('a')[0]['title']
+                if len(datetime_tool.find_all('a')) != 1:
+                    feed.tool = datetime_tool.find_all('a')[1].getText()
+            except Exception as e:
+                print('Failed to get tool or there is no tool')
+                print(traceback.print_exc())
+            try:
+                feed.likes = feed_content.find_all('span', attrs={'node-type': 'like_status'})[-1].getText()
+                if feed.likes == '赞':
+                    feed.likes = 0
+                feed.comments = feed_content.find_all('span', attrs={'node-type': 'comment_btn_text'})[-1].getText()
+                if feed.comments == '评论':
+                    feed.comments = 0
+            except Exception as e:
+                print('Failed to get likes or comments')
+                print(traceback.print_exc())
+            if feed_content.find('div', attrs={'class': 'WB_media_wrap clearfix'}) is not None:
+                # img or video?
+                feed_media = feed_content.find('div', attrs={'class': 'WB_media_wrap clearfix'})
+                if feed_media.find('img') is not None:
+                    # img
+                    imgs = feed_media.find_all('img')
+                    for img in imgs:
+                        img_url = get_short_url(img['src'])
+                        feed.img += img_url + ','
+                else:
+                    feed.video = get_short_url(feed_media.find('video')['src'])
+
+            #     --------------start deprive detail--------------
+
+            # judge if weibo is original
+            if feed_content.find('div', attrs={'class': 'WB_feed_expand'}) is None:  # this is a original weibo
+                feed.type = 'Original'
+                feed.content = feed_content.find('div', attrs={'class': 'WB_text'}).getText().replace(' ', '')
+
+            else:
+                try:
+                    feed.type = 'Forward'
+                    forward_content = feed_content.find('div', attrs={'node-type': 'feed_list_forwardContent'})
+                    feed.content = feed_content.find('div', attrs={'node-type': 'feed_list_content'}).getText().replace(
+                        ' ', '') + " "
+                    feed.forward_username = forward_content.find('div', attrs={'class': 'WB_info'}).getText().replace(
+                        ' ', '').replace('@', '') + " "
+                    feed.forward_content = forward_content.find('div', attrs={'class': 'WB_text'}).getText().replace(
+                        ' ', '') + " "
+                except Exception as e:
+                    print('Failed to get content')
+                    print(traceback.print_exc())
+            try:
+                feed.insert_into_table()
+            except Exception as e:
+                print('Failed to insert to the table')
+                print(traceback.print_exc())
+            print(feed.__dict__)
+            print('------------------------')
+        # next_page = b.find_element(By.PARTIAL_LINK_TEXT, '下一页')
+        # ActionChains(b).move_to_element(next_page).click(next_page).perform()
+        next_url = b.current_url
+        if '&page=' in next_url:
+            next_url = b.current_url.replace('&page=' + str(page - 1), '&page=' + str(page))
+        else:
+            next_url = next_url + '&page=' + str(page)
+        b.get(next_url)
+        print('successfully go to next page')
 
 a=re.search(u'[\u4e00-\u9fa5]','http')
 print(a)
