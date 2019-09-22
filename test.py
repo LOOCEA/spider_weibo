@@ -1,22 +1,25 @@
-from functs import my_webdriver
-import time
-import random
 from selenium.webdriver.common.by import By
 import time
-from selenium.webdriver.common.action_chains import ActionChains
-import re
-import bs4
-from functs.weibo_feed import WeiboFeed
-from functs import my_webdriver
-from selenium.webdriver.support.ui import WebDriverWait
-from requestium import  Keys
 import traceback
-import requests
+
+import bs4
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+
+from functs import my_spider
+from functs import my_webdriver
+from functs.weibo_feed import WeiboFeed
+
+
+def wait(n):
+    time.sleep(n)
 def smart_wait(browser, by, pos):
     #  = WebDriverWait(browser, 10).until(EC.presence_of_element_located(locator))
     ele = WebDriverWait(browser, 20).until(lambda driver: driver.find_element(by, pos))
-def login(username, password, b):
-    b.get('https://weibo.com/p/1005055218229072/')
+
+
+def login(username, password, b, id):
+    b.get('https://weibo.com/p/%s/' % id)
     b.find_element(By.XPATH, '//*[@id="pl_common_top"]/div/div/div[3]/div[2]/ul/li[3]/a').click()
     wait(1)
     b.find_element(By.NAME, "username").send_keys(username)
@@ -29,14 +32,14 @@ def login(username, password, b):
     b.execute_script("document.body.style.zoom='0.7'")
 def find_content(b):
     for page in range(82, 100):
-        # for i in range(10):
-        #     b.execute_script("window.scrollTo(0, document.body.scrollHeight)");
-        #     if is_element_exist(b,By.PARTIAL_LINK_TEXT, '下一页') is True:
-        #         print('下拉完成')
-        #         print('正在第'+str(page-1) +'页')
-        #         break
-        #     wait(2)
-        # page_source=correct_decoding(b.page_source)
+        for i in range(10):
+            b.execute_script("window.scrollTo(0, document.body.scrollHeight)");
+            if my_webdriver.is_element_exist(b, By.PARTIAL_LINK_TEXT, '下一页') is True:
+                print('下拉完成')
+                print('正在第' + str(page - 1) + '页')
+                break
+            wait(2)
+        page_source = my_spider.correct_decoding(b.page_source)
         page_source = b.page_source.replace('\n', '').encode('gbk', 'ignore').decode('gbk')
         soup = bs4.BeautifulSoup(page_source, 'lxml')
         feed_contents = soup.find_all('div', attrs={'class': 'WB_cardwrap WB_feed_type S_bg2 WB_feed_like'})
@@ -73,10 +76,10 @@ def find_content(b):
                     # img
                     imgs = feed_media.find_all('img')
                     for img in imgs:
-                        img_url = get_short_url(img['src'])
+                        img_url = my_spider.get_short_url(img['src'])
                         feed.img += img_url + ','
                 else:
-                    feed.video = get_short_url(feed_media.find('video')['src'])
+                    feed.video = my_spider.get_short_url(feed_media.find('video')['src'])
 
             #     --------------start deprive detail--------------
 
@@ -115,6 +118,5 @@ def find_content(b):
         b.get(next_url)
         print('successfully go to next page')
 
-a=re.search(u'[\u4e00-\u9fa5]','http')
-print(a)
-
+# a=re.search(u'[\u4e00-\u9fa5]','http')
+# print(a)

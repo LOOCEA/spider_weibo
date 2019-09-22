@@ -1,5 +1,7 @@
-import sqlite3
 import os
+import sqlite3
+
+
 class WeiboFeed:
     def __init__(self):
         self.username='unknown'
@@ -37,7 +39,42 @@ def getDB():
     BASE_PATH = os.path.abspath(os.path.dirname(__file__))
     sqlite_filename = os.path.join(BASE_PATH, 'Weibo.db')
     db = sqlite3.connect(sqlite_filename)
+    if is_table_existed('mfytable') == False:
+        cur = db.cursor()
+        cur.execute('create table fmytable('
+                    'username text,'
+                    'tool text,'
+                    'datetime text,'
+                    'type text,'
+                    'likes integer,'
+                    'comments integer'
+                    ',content text,'
+                    'forward_content text,'
+                    'forward_username text'
+                    ',url text,'
+                    'id integer PRIMARY KEY AUTOINCREMENT,'
+                    'img text,'
+                    'video text,'
+                    'userid integer,'
+                    'reposts  integer,'
+                    'forward_likes integer,'
+                    'forward_comments integer,'
+                    'forward_reposts integer,'
+                    'forward_userid integer,'
+                    'blogid integer)')
     return db
+
+
+def is_table_existed(table_name):
+    BASE_PATH = os.path.abspath(os.path.dirname(__file__))
+    sqlite_filename = os.path.join(BASE_PATH, 'Weibo.db')
+    db = sqlite3.connect(sqlite_filename)
+    cur = db.cursor()
+    try:
+        cur.execute(('select * from %s') % table_name)
+    except Exception as e:
+        return False
+    return True
 def is_mblog_existed(blogid):
     db = getDB()
     cur = db.cursor()
@@ -50,5 +87,4 @@ def is_mblog_existed(blogid):
         # print('重复了', index_a.getText())
     else:
         return False
-
 

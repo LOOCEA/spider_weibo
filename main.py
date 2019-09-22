@@ -1,20 +1,17 @@
-from functs import weibo_feed
-from functs import my_spider
-import re
-import jsonpath
-from PIL import Image
 import json
-from selenium.webdriver.common.by import By
+import re
 import time
-from selenium.webdriver.common.action_chains import ActionChains
-import bs4
-from functs import my_webdriver
-from selenium.webdriver.support.ui import WebDriverWait
 import traceback
-from functs.weibo_feed import WeiboFeed
-import chardet
+
+import jsonpath
 import requests
-from io import BytesIO
+
+from functs import my_spider
+from functs import my_webdriver
+from functs import weibo_feed
+from functs.weibo_feed import WeiboFeed
+
+
 def get_real_time(strr):
     t = time.time()
     if '分钟' in strr:
@@ -100,5 +97,5 @@ def find_content_by_json(id):
         print('go to page %s '% str(i+1))
         wait(1)
 if __name__ == "__main__":
-    id=6356377939
+    id = 0
     find_content_by_json(id)
