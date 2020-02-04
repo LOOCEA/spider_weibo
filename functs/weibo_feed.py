@@ -75,10 +75,13 @@ def is_table_existed(table_name):
     except Exception as e:
         return False
     return True
-def is_mblog_existed(blogid):
+
+
+def is_row_existed(table_time, key, value):
     db = getDB()
     cur = db.cursor()
-    cur.execute('select count(blogid) from mytable where blogid = ?', [blogid])
+    sql = 'select count(%s) from %s where %s = ?' % (key, table_time, key)
+    cur.execute(sql, [value])
     counts = cur.fetchall()
     if (int(counts[0][0]) >= 1):
         cur.close()
@@ -87,4 +90,3 @@ def is_mblog_existed(blogid):
         # print('重复了', index_a.getText())
     else:
         return False
-

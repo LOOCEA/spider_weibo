@@ -45,7 +45,7 @@ def find_content_by_json(id):
                 feed.url = my_spider.get_short_url(card['scheme'])
                 mblog=card['mblog']
                 feed.blogid=mblog['id']
-                if weibo_feed.is_mblog_existed(feed.blogid) ==True:
+                if weibo_feed.is_row_existed(feed.blogid) == True:
                     print('blog is repeated')
                     continue
                 try:
